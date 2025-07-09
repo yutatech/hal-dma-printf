@@ -1,7 +1,7 @@
 #include "hal_dma_printf/hal_dma_printf.h"
 
 #ifndef HAL_DMA_PRINTF_BUFFER_SIZE
-#define HAL_DMA_PRINTF_BUFFER_SIZE 25
+#define HAL_DMA_PRINTF_BUFFER_SIZE 1024
 #endif
 
 namespace hal_dma_printf {

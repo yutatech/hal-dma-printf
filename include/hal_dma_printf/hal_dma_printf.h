@@ -1,7 +1,7 @@
 #ifndef HAL_DMA_PRINTF_H
 #define HAL_DMA_PRINTF_H
 
-#include "main.h"
+#include "usart.h"
 
 #ifdef __cplusplus
 extern "C" {

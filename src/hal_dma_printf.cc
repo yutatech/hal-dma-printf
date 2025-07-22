@@ -1,5 +1,9 @@
 #include "hal_dma_printf/hal_dma_printf.h"
 
+#include <cstring>
+
+#include "usart.h"
+
 #ifndef HAL_DMA_PRINTF_BUFFER_SIZE
 #define HAL_DMA_PRINTF_BUFFER_SIZE 1024
 #endif
@@ -32,7 +36,7 @@ void SetUartHandler(UART_HandleTypeDef* huart) {
 #if (USE_HAL_UART_REGISTER_CALLBACKS == 0)
   uint8_t message[] =
       "[HalDmaPrintf] Error: USE_HAL_UART_REGISTER_CALLBACKS is 0.\r\n";
-  HAL_UART_Transmit(&huart1, message, sizeof(message), 100);
+  HAL_UART_Transmit(huart_, message, sizeof(message), 100);
   return;
 #endif
 
@@ -41,7 +45,7 @@ void SetUartHandler(UART_HandleTypeDef* huart) {
   } else if (huart->hdmatx == nullptr) {
     uint8_t message[] =
         "[HalDmaPrintf] Error: TX DMA not initialized for UART.\r\n";
-    HAL_UART_Transmit(&huart1, message, sizeof(message), 100);
+    HAL_UART_Transmit(huart_, message, sizeof(message), 100);
     return;
   }
 
@@ -52,7 +56,6 @@ void SetUartHandler(UART_HandleTypeDef* huart) {
   huart_->TxCpltCallback = OnDmaTransmitComplete;
   huart_->AbortTransmitCpltCallback = OnDmaTransmitComplete;
 }
-
 
 }  // namespace hal_dma_printf
 

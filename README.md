@@ -31,6 +31,6 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
   // ...
 
   /* USER CODE BEGIN 2 */
-  HalDmaPrintfSetup(&huartx);
+  HalDmaPrintfSetup(&huartx, false);
   /* USER CODE END 2 */
 ```

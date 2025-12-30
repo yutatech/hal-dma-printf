@@ -28,7 +28,6 @@ volatile int g_tx_write_idx = 0;
 volatile int g_rx_read_idx = 0;
 bool g_enable_echo = false;
 
-
 /**
  * @brief Calculate available data in TX buffer
  * @return Number of bytes available to transmit
@@ -42,13 +41,15 @@ inline int GetTxAvailableBytes() {
 
 /**
  * @brief Start DMA transmission for pending data
- * @details Handles ring buffer wraparound by transmitting in two parts if needed
+ * @details Handles ring buffer wraparound by transmitting in two parts if
+ * needed
  */
 void StartDmaTransmit() {
   if (g_tx_write_idx < g_tx_read_idx) {
     // Wraparound case: transmit from read position to end of buffer
     const int first_part_size = HAL_DMA_PRINTF_BUFFER_SIZE - g_tx_read_idx;
-    HAL_UART_Transmit_DMA(g_huart, &g_tx_buffer[g_tx_read_idx], first_part_size);
+    HAL_UART_Transmit_DMA(g_huart, &g_tx_buffer[g_tx_read_idx],
+                          first_part_size);
     g_tx_read_idx = 0;
   } else {
     // Normal case: transmit from read to write position
@@ -64,9 +65,7 @@ void StartDmaTransmit() {
  */
 void OnDmaTransmitComplete([[maybe_unused]] UART_HandleTypeDef* huart) {
   // If there's more data to send, start next transmission
-  if (g_tx_read_idx != g_tx_write_idx) {
-    StartDmaTransmit();
-  }
+  if (g_tx_read_idx != g_tx_write_idx) { StartDmaTransmit(); }
 }
 
 /**
@@ -83,10 +82,8 @@ int SetupUartHandler(UART_HandleTypeDef* huart) {
   return HAL_DMA_PRINTF_ERROR_NO_CALLBACK;
 #endif
 
-  if (huart == nullptr) {
-    return HAL_DMA_PRINTF_ERROR_NULL_PTR;
-  }
-  
+  if (huart == nullptr) { return HAL_DMA_PRINTF_ERROR_NULL_PTR; }
+
   if (huart->hdmatx == nullptr) {
     const uint8_t error_msg[] =
         "[HalDmaPrintf] Error: TX DMA not initialized for UART.\r\n"
@@ -94,7 +91,7 @@ int SetupUartHandler(UART_HandleTypeDef* huart) {
     HAL_UART_Transmit(huart, error_msg, sizeof(error_msg) - 1, 100);
     return HAL_DMA_PRINTF_ERROR_NO_DMA_TX;
   }
-  
+
   if (huart->hdmarx == nullptr) {
     const uint8_t error_msg[] =
         "[HalDmaPrintf] Error: RX DMA not initialized for UART.\r\n"
@@ -112,7 +109,7 @@ int SetupUartHandler(UART_HandleTypeDef* huart) {
   // Register callbacks
   g_huart->TxCpltCallback = OnDmaTransmitComplete;
   g_huart->AbortTransmitCpltCallback = OnDmaTransmitComplete;
-  
+
   // Start continuous DMA reception
   HAL_UART_Receive_DMA(g_huart, g_rx_buffer, HAL_DMA_PRINTF_BUFFER_SIZE);
 
@@ -136,18 +133,13 @@ extern "C" int HalDmaPrintfSetup(UART_HandleTypeDef* huart, bool enable_echo) {
   return result;
 }
 
-extern "C" void HalDmaPrintfEnableEcho(void) {
-  g_enable_echo = true;
-}
+extern "C" void HalDmaPrintfEnableEcho(void) { g_enable_echo = true; }
 
-extern "C" void HalDmaPrintfDisableEcho(void) {
-  g_enable_echo = false;
-}
+extern "C" void HalDmaPrintfDisableEcho(void) { g_enable_echo = false; }
 
 extern "C" size_t HalDmaPrintfGetBufferSize(void) {
   return HAL_DMA_PRINTF_BUFFER_SIZE;
 }
-
 
 // ============================================================================
 // Syscall hooks for printf/scanf and C++ streams
@@ -161,9 +153,7 @@ extern "C" size_t HalDmaPrintfGetBufferSize(void) {
  * @return Number of bytes written
  */
 extern "C" int _write([[maybe_unused]] int file, char* ptr, int len) {
-  if (g_huart == nullptr || ptr == nullptr || len <= 0) {
-    return 0;
-  }
+  if (g_huart == nullptr || ptr == nullptr || len <= 0) { return 0; }
 
   const int space_at_end = HAL_DMA_PRINTF_BUFFER_SIZE - g_tx_write_idx;
 
@@ -175,17 +165,15 @@ extern "C" int _write([[maybe_unused]] int file, char* ptr, int len) {
     // Need to wrap around
     memcpy(&g_tx_buffer[g_tx_write_idx], ptr, space_at_end);
     const int remaining = len - space_at_end;
-    const int to_copy = (remaining > HAL_DMA_PRINTF_BUFFER_SIZE) 
-                           ? HAL_DMA_PRINTF_BUFFER_SIZE 
-                           : remaining;
+    const int to_copy = (remaining > HAL_DMA_PRINTF_BUFFER_SIZE)
+                            ? HAL_DMA_PRINTF_BUFFER_SIZE
+                            : remaining;
     memcpy(g_tx_buffer, ptr + space_at_end, to_copy);
     g_tx_write_idx = to_copy;
   }
 
   // Trigger DMA transmission if UART is ready
-  if (g_huart->gState == HAL_UART_STATE_READY) {
-    StartDmaTransmit();
-  }
+  if (g_huart->gState == HAL_UART_STATE_READY) { StartDmaTransmit(); }
 
   return len;
 }
@@ -198,17 +186,14 @@ extern "C" int _write([[maybe_unused]] int file, char* ptr, int len) {
  * @return Number of bytes read
  */
 extern "C" int _read([[maybe_unused]] int file, char* ptr, int len) {
-  if (g_huart == nullptr || ptr == nullptr || len <= 0) {
-    return 0;
-  }
+  if (g_huart == nullptr || ptr == nullptr || len <= 0) { return 0; }
 
   int rx_count = 0;
-  
-  // Get current DMA position
-  const volatile int dma_write_idx = 
-      HAL_DMA_PRINTF_BUFFER_SIZE - g_huart->hdmarx->Instance->NDTR;
 
   while (rx_count < len) {
+    // Get current DMA position
+    const volatile int dma_write_idx =
+        HAL_DMA_PRINTF_BUFFER_SIZE - g_huart->hdmarx->Instance->NDTR;
     // Check if new data is available
     if (dma_write_idx != g_rx_read_idx) {
       char ch = static_cast<char>(g_rx_buffer[g_rx_read_idx]);
@@ -217,16 +202,12 @@ extern "C" int _read([[maybe_unused]] int file, char* ptr, int len) {
       // Handle line endings
       if (ch == '\n' || ch == '\r') {
         ptr[rx_count] = '\n';
-        if (g_enable_echo) {
-          _write(1, &ptr[rx_count], 1);
-        }
+        if (g_enable_echo) { _write(1, &ptr[rx_count], 1); }
         return rx_count + 1;
       }
 
       ptr[rx_count] = ch;
-      if (g_enable_echo) {
-        _write(1, &ptr[rx_count], 1);
-      }
+      if (g_enable_echo) { _write(1, &ptr[rx_count], 1); }
       ++rx_count;
     }
   }

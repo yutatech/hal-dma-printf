@@ -192,8 +192,13 @@ extern "C" int _read([[maybe_unused]] int file, char* ptr, int len) {
 
   while (rx_count < len) {
     // Get current DMA position
+#if defined(STM32G431xx)
+    const volatile int ndtr = g_huart->hdmarx->Instance->CNDTR;
+#else
+    const volatile int ndtr = g_huart->hdmarx->Instance->NDTR;
+#endif
     const volatile int dma_write_idx =
-        HAL_DMA_PRINTF_BUFFER_SIZE - g_huart->hdmarx->Instance->NDTR;
+        HAL_DMA_PRINTF_BUFFER_SIZE - ndtr;
     // Check if new data is available
     if (dma_write_idx != g_rx_read_idx) {
       char ch = static_cast<char>(g_rx_buffer[g_rx_read_idx]);

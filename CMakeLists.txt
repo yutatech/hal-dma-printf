@@ -18,6 +18,8 @@ enable_language(CXX)
 # ============================================================================
 
 option(HAL_DMA_PRINTF_BUILD_EXAMPLES "Build example code" OFF)
+option(HAL_DMA_PRINTF_STRICT_VALIDATION "Enable strict validation checks" ON)
+option(HAL_DMA_PRINTF_ENABLE_READ_FEATURE "Enable read feature for scanf/std::cin" ON)
 
 # Configurable buffer size (default: 1024 bytes)
 set(HAL_DMA_PRINTF_BUFFER_SIZE "1024" CACHE STRING 
@@ -44,6 +46,12 @@ target_include_directories(${PROJECT_NAME} INTERFACE
 target_compile_definitions(${PROJECT_NAME} INTERFACE
     HAL_DMA_PRINTF_BUFFER_SIZE=${HAL_DMA_PRINTF_BUFFER_SIZE}
 )
+if (HAL_DMA_PRINTF_STRICT_VALIDATION)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE HAL_DMA_PRINTF_STRICT_VALIDATION)
+endif()
+if (HAL_DMA_PRINTF_ENABLE_READ_FEATURE)
+    target_compile_definitions(${PROJECT_NAME} INTERFACE HAL_DMA_PRINTF_ENABLE_READ_FEATURE)
+endif()
 
 # ============================================================================
 # Status Messages

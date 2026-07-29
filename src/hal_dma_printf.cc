@@ -74,6 +74,7 @@ void OnDmaTransmitComplete([[maybe_unused]] UART_HandleTypeDef* huart) {
  * @return Error code
  */
 int SetupUartHandler(UART_HandleTypeDef* huart) {
+#ifdef HAL_DMA_PRINTF_STRICT_VALIDATION
 #if (USE_HAL_UART_REGISTER_CALLBACKS == 0)
   const uint8_t error_msg[] =
       "[HalDmaPrintf] Error: USE_HAL_UART_REGISTER_CALLBACKS is disabled.\r\n"
@@ -99,6 +100,7 @@ int SetupUartHandler(UART_HandleTypeDef* huart) {
     HAL_UART_Transmit(huart, error_msg, sizeof(error_msg) - 1, 100);
     return HAL_DMA_PRINTF_ERROR_NO_DMA_RX;
   }
+#endif  // HAL_DMA_PRINTF_STRICT_VALIDATION
 
   // Initialize global state
   g_huart = huart;
@@ -178,6 +180,7 @@ extern "C" int _write([[maybe_unused]] int file, char* ptr, int len) {
   return len;
 }
 
+#ifdef HAL_DMA_PRINTF_ENABLE_READ_FEATURE
 /**
  * @brief Read syscall hook for scanf() and std::cin
  * @param file File descriptor (unused)
@@ -219,3 +222,4 @@ extern "C" int _read([[maybe_unused]] int file, char* ptr, int len) {
 
   return rx_count;
 }
+#endif  // HAL_DMA_PRINTF_ENABLE_READ_FEATURE
